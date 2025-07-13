@@ -430,9 +430,9 @@ const StadiumDetailsScreen = ({ navigation, route }) => {
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         {renderTabContent()}
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };

@@ -15,6 +15,7 @@ import RoleSelectionScreen from './src/screens/RoleSelectionScreen';
 import StadiumManagementScreen from './src/screens/StadiumManagementScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import AddStadiumScreen from './src/screens/AddStadiumScreen';
+import StadiumDetailsScreen from './src/screens/StadiumDetailsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import { AuthProvider } from './src/context/AuthContext';
 import { NotificationProvider } from './src/context/NotificationContext';
@@ -42,6 +43,7 @@ export default function App() {
               <Stack.Screen name="StadiumManagement" component={StadiumManagementScreen} />
               <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
               <Stack.Screen name="AddStadium" component={AddStadiumScreen} />
+              <Stack.Screen name="StadiumDetails" component={StadiumDetailsScreen} />
               <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
               <Stack.Screen name="AllBookings" component={AllBookingsScreen} />
               <Stack.Screen name="Notifications" component={NotificationsScreen} />
