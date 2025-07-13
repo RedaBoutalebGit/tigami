@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Football Booking",
+    "slug": "football-booking-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#1a5f1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.footballbooking.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a5f1a"
+      },
+      "package": "com.footballbooking.app"
+    },
+    "web": {
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}
