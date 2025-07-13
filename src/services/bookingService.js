@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { notificationService } from './notificationService';
 
 export const bookingService = {
   // Confirm a booking (Admin only)
@@ -18,6 +19,9 @@ export const bookingService = {
         .single();
 
       if (error) throw error;
+
+      // Send booking confirmation notification
+      await notificationService.sendBookingNotification(bookingId, 'booking_confirmed');
 
       // Get user profile separately
       if (data && data.user_id) {
@@ -61,6 +65,12 @@ export const bookingService = {
         .single();
 
       if (error) throw error;
+
+      // Send booking cancellation notification
+      await notificationService.sendBookingNotification(bookingId, 'booking_cancelled', {
+        cancelledBy: 'owner',
+        reason
+      });
 
       // Get user profile separately
       if (data && data.user_id) {

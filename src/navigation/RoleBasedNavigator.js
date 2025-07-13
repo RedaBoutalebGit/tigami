@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import MainTabNavigator from './MainTabNavigator';
+import StadiumOwnerTabNavigator from './StadiumOwnerTabNavigator';
 import StadiumManagementScreen from '../screens/StadiumManagementScreen';
 import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
@@ -28,7 +29,7 @@ const RoleBasedNavigator = () => {
     case 'admin':
       return <AdminDashboardScreen />;
     case 'stadium_owner':
-      return <StadiumManagementScreen />;
+      return <StadiumOwnerTabNavigator />;
     case 'player':
     default:
       return <MainTabNavigator />;

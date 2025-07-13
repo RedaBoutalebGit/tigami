@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.stadiums (
   surface_type TEXT DEFAULT 'artificial_grass',
   photos TEXT[],
   available_hours JSONB,
+  date_specific_availability JSONB,
   is_active BOOLEAN DEFAULT true,
   rating DECIMAL(3, 2) DEFAULT 0,
   total_bookings INTEGER DEFAULT 0,

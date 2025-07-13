@@ -141,15 +141,32 @@ export default function OwnerDashboardScreen({ navigation }) {
           .from('bookings')
           .select(`
             *,
-            stadiums (name),
-            profiles (full_name)
+            stadiums (name)
           `)
           .in('stadium_id', stadiumIds)
           .order('created_at', { ascending: false })
           .limit(10);
 
         if (bookingsError) throw bookingsError;
-        setRecentBookings(bookingsData || []);
+
+        // Fetch user profiles separately
+        if (bookingsData && bookingsData.length > 0) {
+          const userIds = bookingsData.map(booking => booking.user_id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+
+          // Merge profiles with bookings
+          const bookingsWithProfiles = bookingsData.map(booking => ({
+            ...booking,
+            profiles: profilesData?.find(p => p.id === booking.user_id) || { full_name: 'Unknown User' }
+          }));
+
+          setRecentBookings(bookingsWithProfiles);
+        } else {
+          setRecentBookings([]);
+        }
 
         // Calculate stats
         const confirmedBookings = bookingsData?.filter(b => b.status === 'confirmed') || [];

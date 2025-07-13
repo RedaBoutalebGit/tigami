@@ -1,8 +1,8 @@
 export const Colors = {
-  primary: '#1a5f1a',      // Grass green
-  secondary: '#000000',     // Pitch black
+  primary: '#90a4ae',      // Grass green
+  secondary: '#3e2723',     // Pitch black
   white: '#ffffff',         // Bright white
-  accent: '#ffff00',        // Neon yellow
+  accent: '#3e2723',        // Neon yellow
   accentRed: '#ff0000',     // Neon red
   lightGreen: '#2d8f2d',    // Lighter green
   darkGreen: '#0f3f0f',     // Darker green
