@@ -7,6 +7,13 @@ import { StyleSheet } from 'react-native';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import MainTabNavigator from './src/navigation/MainTabNavigator';
+import RoleBasedNavigator from './src/navigation/RoleBasedNavigator';
+import BookingDetailsScreen from './src/screens/BookingDetailsScreen';
+import AllBookingsScreen from './src/screens/AllBookingsScreen';
+import RoleSelectionScreen from './src/screens/RoleSelectionScreen';
+import StadiumManagementScreen from './src/screens/StadiumManagementScreen';
+import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
+import AddStadiumScreen from './src/screens/AddStadiumScreen';
 import { AuthProvider } from './src/context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -25,7 +32,13 @@ export default function App() {
         >
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Main" component={MainTabNavigator} />
+          <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+          <Stack.Screen name="Main" component={RoleBasedNavigator} />
+          <Stack.Screen name="StadiumManagement" component={StadiumManagementScreen} />
+          <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+          <Stack.Screen name="AddStadium" component={AddStadiumScreen} />
+          <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+          <Stack.Screen name="AllBookings" component={AllBookingsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>

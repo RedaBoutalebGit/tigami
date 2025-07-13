@@ -47,9 +47,17 @@ export default function LoginScreen({ navigation }) {
         Alert.alert('Error', result.error);
       } else {
         if (isLogin) {
+          // Let the RoleBasedNavigator handle routing based on user role
           navigation.navigate('Main');
         } else {
-          Alert.alert('Success', 'Account created! Please check your email to verify your account.');
+          Alert.alert(
+            'Success', 
+            'Account created! Please select your role.',
+            [{
+              text: 'Continue',
+              onPress: () => navigation.navigate('RoleSelection')
+            }]
+          );
         }
       }
     } catch (error) {
@@ -294,6 +302,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     opacity: 0.1,
+    pointerEvents: 'none',
   },
   footballIcon1: {
     position: 'absolute',
