@@ -15,7 +15,6 @@ import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/NotificationContext';
 import { bookingService } from '../services/bookingService';
 import RoleGuard from '../components/RoleGuard';
 
@@ -81,7 +80,6 @@ const RecentBookingItem = ({ booking, onConfirm, onCancel }) => {
 
 export default function StadiumOwnerDashboard({ navigation }) {
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
   const [stadiums, setStadiums] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
   const [stats, setStats] = useState({
@@ -226,23 +224,8 @@ export default function StadiumOwnerDashboard({ navigation }) {
     <RoleGuard allowedRoles={['stadium_owner']}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Stadium Dashboard</Text>
-            <Text style={styles.headerSubtitle}>Manage your football stadiums</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.notificationButton}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Ionicons name="notifications-outline" size={24} color={Colors.white} />
-            {unreadCount > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Stadium Dashboard</Text>
+          <Text style={styles.headerSubtitle}>Manage your football stadiums</Text>
         </View>
 
         <ScrollView 
@@ -285,7 +268,7 @@ export default function StadiumOwnerDashboard({ navigation }) {
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.quickActionsGrid}>
               <QuickActionCard
-                title="Add Stadiumhgdjd"
+                title="Add Stadium"
                 icon="add-circle-outline"
                 onPress={() => navigation.navigate('AddStadium')}
                 color={Colors.primary}
@@ -386,16 +369,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
     backgroundColor: Colors.primary,
-  },
-  headerLeft: {
-    flex: 1,
   },
   headerTitle: {
     fontSize: Fonts.sizes.xxl,
@@ -617,25 +594,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
     padding: 6,
     borderRadius: 6,
-  },
-  notificationButton: {
-    padding: 8,
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: Colors.error,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationBadgeText: {
-    fontSize: Fonts.sizes.xs,
-    fontWeight: '600',
-    color: Colors.white,
   },
 });
