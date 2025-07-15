@@ -5,7 +5,12 @@
       "Bash(npm start)",
       "Bash(npm install)",
       "Bash(npx expo install:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(npx expo start:*)",
+      "Bash(npm install:*)",
+      "Bash(ip route:*)",
+      "Bash(hostname:*)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }
