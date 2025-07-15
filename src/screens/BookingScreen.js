@@ -15,9 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { supabase } from '../services/supabase';
+import { availabilityService } from '../services/availabilityService';
+import { notificationService } from '../services/notificationService';
 import { useAuth } from '../context/AuthContext';
 
-const TimeSlot = ({ time, available, selected, onPress }) => (
+const TimeSlot = ({ time, available, selected, reason, onPress }) => (
   <TouchableOpacity
     style={[
       styles.timeSlot,
@@ -36,6 +38,14 @@ const TimeSlot = ({ time, available, selected, onPress }) => (
     >
       {time}
     </Text>
+    {!available && (
+      <Ionicons 
+        name={reason?.includes('booked') ? 'lock-closed' : 'close-circle'} 
+        size={12} 
+        color={Colors.white} 
+        style={styles.slotIcon}
+      />
+    )}
   </TouchableOpacity>
 );
 
@@ -46,6 +56,7 @@ export default function BookingScreen({ route, navigation }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotDetails, setSlotDetails] = useState({});
   const [loading, setLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
 
@@ -66,21 +77,34 @@ export default function BookingScreen({ route, navigation }) {
 
     try {
       setLoading(true);
-      const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select('start_time, end_time')
-        .eq('stadium_id', stadium.id)
-        .eq('booking_date', selectedDate)
-        .in('status', ['confirmed', 'pending']);
-
-      if (error) throw error;
-
-      const bookedSlots = bookings?.map(booking => booking.start_time) || [];
-      const available = timeSlots.filter(slot => !bookedSlots.includes(`${slot}:00`));
-      setAvailableSlots(available);
+      
+      // Use enhanced availability service
+      const result = await availabilityService.getAvailableSlots(stadium.id, selectedDate);
+      
+      if (result.success) {
+        const available = [];
+        const details = {};
+        
+        result.slots.forEach(slot => {
+          if (slot.available) {
+            available.push(slot.time);
+          }
+          details[slot.time] = {
+            available: slot.available,
+            reason: slot.reason
+          };
+        });
+        
+        setAvailableSlots(available);
+        setSlotDetails(details);
+      } else {
+        throw new Error(result.error || 'Failed to fetch availability');
+      }
     } catch (error) {
       console.error('Error fetching available slots:', error);
       Alert.alert('Error', 'Failed to load available time slots');
+      setAvailableSlots([]);
+      setSlotDetails({});
     } finally {
       setLoading(false);
     }
@@ -100,8 +124,12 @@ export default function BookingScreen({ route, navigation }) {
   };
 
   const handleTimeSlotSelect = (time) => {
-    if (availableSlots.includes(time)) {
+    const slotInfo = slotDetails[time];
+    if (slotInfo?.available) {
       setSelectedTimeSlot(time);
+    } else if (slotInfo) {
+      // Show reason why slot is not available
+      Alert.alert('Slot Unavailable', slotInfo.reason);
     }
   };
 
@@ -123,6 +151,20 @@ export default function BookingScreen({ route, navigation }) {
       const endHour = parseInt(selectedTimeSlot.split(':')[0]) + 1;
       const endTime = `${endHour.toString().padStart(2, '0')}:00`;
 
+      // Validate booking request with enhanced availability
+      const validation = await availabilityService.validateBookingRequest(
+        stadium.id,
+        selectedDate,
+        selectedTimeSlot,
+        endHour.toString().padStart(2, '0') + ':00'
+      );
+
+      if (!validation.valid) {
+        Alert.alert('Booking Not Available', validation.reason);
+        setBookingLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('bookings')
         .insert([
@@ -140,6 +182,11 @@ export default function BookingScreen({ route, navigation }) {
         .select();
 
       if (error) throw error;
+
+      // Send booking creation notification
+      if (data && data.length > 0) {
+        await notificationService.sendBookingNotification(data[0].id, 'booking_created');
+      }
 
       Alert.alert(
         'Booking Confirmed!',
@@ -246,6 +293,24 @@ export default function BookingScreen({ route, navigation }) {
         {selectedDate && (
           <View style={styles.timeSection}>
             <Text style={styles.sectionTitle}>Available Time Slots</Text>
+            
+            <View style={styles.legendContainer}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.lightGray }]} />
+                <Text style={styles.legendText}>Available</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.gray }]} />
+                <Ionicons name="lock-closed" size={10} color={Colors.white} style={styles.legendIcon} />
+                <Text style={styles.legendText}>Booked</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.gray }]} />
+                <Ionicons name="close-circle" size={10} color={Colors.white} style={styles.legendIcon} />
+                <Text style={styles.legendText}>Unavailable</Text>
+              </View>
+            </View>
+            
             {loading ? (
               <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
             ) : (
@@ -254,7 +319,8 @@ export default function BookingScreen({ route, navigation }) {
                   <TimeSlot
                     key={time}
                     time={time}
-                    available={availableSlots.includes(time)}
+                    available={slotDetails[time]?.available || false}
+                    reason={slotDetails[time]?.reason}
                     selected={selectedTimeSlot === time}
                     onPress={() => handleTimeSlotSelect(time)}
                   />
@@ -422,6 +488,37 @@ const styles = StyleSheet.create({
   },
   selectedTimeSlotText: {
     color: Colors.white,
+  },
+  slotIcon: {
+    marginTop: 2,
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: Colors.lightGray,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legendIcon: {
+    position: 'absolute',
+  },
+  legendText: {
+    fontSize: Fonts.sizes.xs,
+    color: Colors.secondary,
+    fontWeight: '500',
   },
   summarySection: {
     paddingHorizontal: 20,

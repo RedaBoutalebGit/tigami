@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { useAuth } from '../context/AuthContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import BookingScreen from '../screens/BookingScreen';
@@ -11,6 +12,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 export default function MainTabNavigator() {
+  const { userProfile, isStadiumOwner, isAdmin } = useAuth();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -25,6 +28,10 @@ export default function MainTabNavigator() {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'Management') {
+            iconName = focused ? 'business' : 'business-outline';
+          } else if (route.name === 'Admin') {
+            iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -66,6 +73,20 @@ export default function MainTabNavigator() {
         component={ProfileScreen}
         options={{ tabBarLabel: 'Profile' }}
       />
+      {(isStadiumOwner() || isAdmin()) && (
+        <Tab.Screen 
+          name="Management" 
+          component={require('../screens/StadiumManagementScreen').default} 
+          options={{ tabBarLabel: 'Manage' }} 
+        />
+      )}
+      {isAdmin() && (
+        <Tab.Screen 
+          name="Admin" 
+          component={require('../screens/AdminDashboardScreen').default} 
+          options={{ tabBarLabel: 'Admin' }} 
+        />
+      )}
     </Tab.Navigator>
   );
 }

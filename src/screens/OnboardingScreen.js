@@ -225,6 +225,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     opacity: 0.1,
+    pointerEvents: 'none',
   },
   football1: {
     position: 'absolute',

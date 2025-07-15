@@ -14,6 +14,8 @@ import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+import { bookingService } from '../services/bookingService';
+import RoleGuard from '../components/RoleGuard';
 
 const StadiumCard = ({ stadium, onPress, onEdit }) => (
   <View style={styles.stadiumCard}>
@@ -46,7 +48,7 @@ const StadiumCard = ({ stadium, onPress, onEdit }) => (
   </View>
 );
 
-const BookingItem = ({ booking }) => {
+const BookingItem = ({ booking, onConfirm, onCancel }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed':
@@ -84,13 +86,23 @@ const BookingItem = ({ booking }) => {
         <View style={[styles.bookingStatus, { backgroundColor: getStatusColor(booking.status) }]}>
           <Text style={styles.bookingStatusText}>{booking.status}</Text>
         </View>
+        {booking.status === 'pending' && (
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.confirmQuickButton} onPress={() => onConfirm(booking)}>
+              <Ionicons name="checkmark" size={16} color={Colors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelQuickButton} onPress={() => onCancel(booking)}>
+              <Ionicons name="close" size={16} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
 };
 
 export default function OwnerDashboardScreen({ navigation }) {
-  const { user } = useAuth();
+  const { user, isStadiumOwner, isAdmin } = useAuth();
   const [stadiums, setStadiums] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
   const [stats, setStats] = useState({
@@ -99,6 +111,7 @@ export default function OwnerDashboardScreen({ navigation }) {
     activeStadiums: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -128,15 +141,32 @@ export default function OwnerDashboardScreen({ navigation }) {
           .from('bookings')
           .select(`
             *,
-            stadiums (name),
-            profiles (full_name)
+            stadiums (name)
           `)
           .in('stadium_id', stadiumIds)
           .order('created_at', { ascending: false })
           .limit(10);
 
         if (bookingsError) throw bookingsError;
-        setRecentBookings(bookingsData || []);
+
+        // Fetch user profiles separately
+        if (bookingsData && bookingsData.length > 0) {
+          const userIds = bookingsData.map(booking => booking.user_id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+
+          // Merge profiles with bookings
+          const bookingsWithProfiles = bookingsData.map(booking => ({
+            ...booking,
+            profiles: profilesData?.find(p => p.id === booking.user_id) || { full_name: 'Unknown User' }
+          }));
+
+          setRecentBookings(bookingsWithProfiles);
+        } else {
+          setRecentBookings([]);
+        }
 
         // Calculate stats
         const confirmedBookings = bookingsData?.filter(b => b.status === 'confirmed') || [];
@@ -169,8 +199,57 @@ export default function OwnerDashboardScreen({ navigation }) {
     navigation.navigate('StadiumDetails', { stadium });
   };
 
+  const handleConfirmBooking = async (booking) => {
+    Alert.alert(
+      'Confirm Booking',
+      `Confirm booking for ${booking.profiles?.full_name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Confirm', 
+          onPress: async () => {
+            setActionLoading(true);
+            const result = await bookingService.confirmBooking(booking.id);
+            if (result.success) {
+              Alert.alert('Success', 'Booking confirmed successfully');
+              fetchDashboardData();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to confirm booking');
+            }
+            setActionLoading(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCancelBooking = async (booking) => {
+    Alert.alert(
+      'Cancel Booking',
+      `Cancel booking for ${booking.profiles?.full_name}?`,
+      [
+        { text: 'No', style: 'cancel' },
+        { 
+          text: 'Yes', 
+          onPress: async () => {
+            setActionLoading(true);
+            const result = await bookingService.cancelBooking(booking.id, 'Cancelled by stadium owner');
+            if (result.success) {
+              Alert.alert('Success', 'Booking cancelled successfully');
+              fetchDashboardData();
+            } else {
+              Alert.alert('Error', result.error || 'Failed to cancel booking');
+            }
+            setActionLoading(false);
+          }
+        }
+      ]
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <RoleGuard allowedRoles={['stadium_owner', 'admin']}>
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Stadium Dashboard</Text>
         <Text style={styles.headerSubtitle}>Manage your football stadiums</Text>
@@ -251,7 +330,13 @@ export default function OwnerDashboardScreen({ navigation }) {
             <FlatList
               data={recentBookings}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <BookingItem booking={item} />}
+              renderItem={({ item }) => (
+                <BookingItem 
+                  booking={item} 
+                  onConfirm={handleConfirmBooking}
+                  onCancel={handleCancelBooking}
+                />
+              )}
               scrollEnabled={false}
               showsVerticalScrollIndicator={false}
             />
@@ -270,7 +355,8 @@ export default function OwnerDashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </RoleGuard>
   );
 }
 
@@ -532,5 +618,20 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginLeft: 12,
     fontWeight: '500',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  confirmQuickButton: {
+    backgroundColor: Colors.success,
+    padding: 6,
+    borderRadius: 6,
+    marginRight: 6,
+  },
+  cancelQuickButton: {
+    backgroundColor: Colors.error,
+    padding: 6,
+    borderRadius: 6,
   },
 });

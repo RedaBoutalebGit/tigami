@@ -7,7 +7,7 @@
     "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#1a5f1a"
+      "backgroundColor": "#f8f5f0"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1a5f1a"
+        "backgroundColor": "#f0f8ff"
       },
       "package": "com.footballbooking.app"
     },
